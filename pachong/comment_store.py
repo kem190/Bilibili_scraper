@@ -2,10 +2,14 @@ import requests
 import json
 import time
 import random
+import csv
+import hashlib
+from urllib.parse import quote
+import re
 
 # 信息填写栏
 # API URL
-comments_api_url = "https://api.bilibili.com/x/v2/reply/wbi/main?oid=1005894049&type=1&mode=3&pagination_str=%7B%22offset%22:%22%22%7D&plat=1&seek_rpid=&web_location=1315875&w_rid=f2902c30d9a3e44d117cb18e068db066&wts=1719257656"
+comments_api_url = "https://api.bilibili.com/x/v2/reply/wbi/main?oid=1505922100&type=1&mode=3&pagination_str=%7B%22offset%22:%22%7B%5C%22type%5C%22:1,%5C%22direction%5C%22:1,%5C%22session_id%5C%22:%5C%221760931494753896%5C%22,%5C%22data%5C%22:%7B%7D%7D%22%7D&plat=1&web_location=1315875&w_rid=920d09a5d1bb90a38e6881a37bf79e2f&wts=1719659679"
 
 # Cookies (这是我自己的账号需要替换)
 cookies = {
@@ -28,7 +32,10 @@ def fetch_comments(api_url, headers, cookies, retries=3):
         try:
             response = requests.get(api_url, headers=headers, cookies=cookies)
             if response.status_code == 200:
-                return response.json()
+                data = response.json()
+                with open('vector.json', 'w') as file:
+                    json.dump(data, file)
+                    return data
             elif response.status_code == 429:  # Too Many Requests
                 wait_time = int(response.headers.get("Retry-After", 2 ** i))
                 print(f"Rate limited. Waiting for {wait_time} seconds.")
@@ -47,7 +54,7 @@ def extract_comment_data(comment):
     sign = comment['member']['sign']
     message = comment['content']['message']
     time_desc = comment['reply_control']['time_desc']
-    location = comment['reply_control']['location']
+    location = comment['reply_control'].get('location', '')
     level = comment['member']['level_info']['current_level']
     return {
         "user": user,
@@ -58,15 +65,44 @@ def extract_comment_data(comment):
         "location": location,
         "level": level
     }
+def gen_url_key(pagination_str, timestamp):
+    ee = [
+        "mode=3",
+        "oid=758385725",
+        f"pagination_str={quote(pagination_str)}",
+        "plat=1",
+        "type=1",
+        "web_location=1315875",
+        f"wts={timestamp}"
+    ]
+    z = 'ea1db124af3c7062474693fa704f4ff8'
+    L = '&'.join(ee)
+    MD5 = hashlib.md5()
+    last_key = L + z
+    MD5.update(last_key.encode('utf-8'))
+    w_rid = MD5.hexdigest()
+    return w_rid
 
 
 # RUN！
-comments_data = fetch_comments(comments_api_url, headers, cookies)
+all_data = fetch_comments(comments_api_url, headers, cookies)
 
 # write
-if comments_data and comments_data['code'] == 0:
-    comments = comments_data['data']['replies']
+if all_data and all_data['code'] == 0:
+    comments = all_data['data']['replies']
 
+    # 会返回错误的gen_url
+    # next_offset = all_data['data']['cursor']['pagination_reply']['next_offset']
+    # print(next_offset)
+    # id_next_page = re.findall('session_id\":(\d+)', all_data)[0]
+    # print(id_next_page)
+    # pagination_str = f'{{"offset": {{"type": 1, "direction": 1, "session_id": "{id_next_page}", "data": {{}}}}}}'
+    # # pagination_str = f"{"offset":"{\\"type\\": 1, \\"direction\":1,\\"session_id\\":\\"{id_next_page}\\",\\"data\\":{}}"}"
+    # timestamp = time.time()
+    # w_rid = gen_url_key(pagination_str, timestamp)
+    # new_url = (
+    #     f"https://api.bilibili.com/x/v2/reply/wbi/main?oid=47527629&type=1&mode=3&pagination_str={pagination_str}&plat=1&web_location=1315875&w_rid={w_rid}&wts={timestamp}")
+    # print(new_url)
     comments_list = []
 
     # Parse and structure the comments data

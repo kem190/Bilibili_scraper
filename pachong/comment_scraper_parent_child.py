@@ -30,11 +30,13 @@ def gen_url_key(pagination_str, timestamp=timestamp):
     w_rid = MD5.hexdigest()
     return w_rid
 w_rid = gen_url_key("%7B%22offset%22:%22%22%7D", timestamp)
-comments_api_url = f"https://api.bilibili.com/x/v2/reply/wbi/main?oid=1705820641&type=1&mode=3&pagination_str=%7B%22offset%22:%22%22%7D&plat=1&seek_rpid=&web_location=1315875&w_rid={w_rid}&wts={timestamp}"
+
+comments_api_url = (''
+                    'https://api.bilibili.com/x/v2/reply/wbi/main?oid=1505922100&type=1&mode=3&pagination_str=%7B%22offset%22:%22%7B%5C%22type%5C%22:1,%5C%22direction%5C%22:1,%5C%22session_id%5C%22:%5C%221760931494753896%5C%22,%5C%22data%5C%22:%7B%7D%7D%22%7D&plat=1&web_location=1315875&w_rid=920d09a5d1bb90a38e6881a37bf79e2f&wts=1719659679')
 print(comments_api_url)
 # Cookies (这是我自己的账号需要替换)
 cookies = {
-    "Cookies": "buvid3=E579EDE8-64A3-72D3-AD0D-9A111BE54DD103395infoc; b_nut=1713522703; CURRENT_FNVAL=4048; _uuid=A410CC8A5-FF13-FF86-D6FA-3542F4CC4910F05666infoc; buvid4=346F68FE-9DBC-DD3B-F9B3-C82EF884743305819-024041910-AYCtu957i4E2ZljBHTFxVg%3D%3D; rpdid=|(uJ~l)lmJ~R0J'u~uJlkk~ul; enable_web_push=DISABLE; FEED_LIVE_VERSION=V_HEADER_LIVE_NEW_POP; header_theme_version=CLOSE; buvid_fp_plain=undefined; DedeUserID=37424969; DedeUserID__ckMd5=02c3aef233c2afc9; PVID=1; fingerprint=7bc8ecec0e75401f907a3d6629ab4e69; buvid_fp=7bc8ecec0e75401f907a3d6629ab4e69; bili_ticket=eyJhbGciOiJIUzI1NiIsImtpZCI6InMwMyIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTkyNjg2MTMsImlhdCI6MTcxOTAwOTM1MywicGx0IjotMX0.-LdByVQmu-_jQFzpGDFqMQcqNBAarAowkZWJgTFfta0; bili_ticket_expires=1719268553; SESSDATA=a78c20de%2C1734696255%2Cb4d7d%2A62CjAlG5VbsUom3wUMggQRRW4gH-Dla6slK6SjWQ0o0NWZYcL4vZeHnmode7f2aL38tDYSVnVBRXoyWVM3S0xQWFVJbUc5TzMxMWlBaFdNRkEtY0JSSHgzeFhJTlhPaDhwX0htdHJjU3NDMnRnTGVIc1d0eWxwUE5rVWtTZEpnMHJUZ1dRanI5NnhBIIEC; bili_jct=c4704f6d7e6253cd5671c1d19e2d9cc0; sid=84sbggfc; home_feed_column=5; browser_resolution=1707-940; CURRENT_QUALITY=80; bp_t_offset_37424969=946595446120251392; b_lsid=B6BAF423_1904AA658CD; bsource=search_google"
+    "Cookies": "buvid3=E579EDE8-64A3-72D3-AD0D-9A111BE54DD103395infoc; b_nut=1713522703; CURRENT_FNVAL=4048; _uuid=A410CC8A5-FF13-FF86-D6FA-3542F4CC4910F05666infoc; buvid4=346F68FE-9DBC-DD3B-F9B3-C82EF884743305819-024041910-AYCtu957i4E2ZljBHTFxVg%3D%3D; rpdid=|(uJ~l)lmJ~R0J'u~uJlkk~ul; enable_web_push=DISABLE; FEED_LIVE_VERSION=V_HEADER_LIVE_NEW_POP; header_theme_version=CLOSE; buvid_fp_plain=undefined; DedeUserID=37424969; DedeUserID__ckMd5=02c3aef233c2afc9; SESSDATA=dacf3d60%2C1734966484%2C417e5%2A62CjAtHupAZcrQfXP9rfhTUPTLUL53jHHUwv-aN0TrfkNNanUVvxSiFVCuz6vmQn7tddkSVnhib0tmNUtILUlhcWctTHl4THVVVmlDTHlXUWp3YTFHVkN3dE1fWnllTEJ6QW1ZaklxVEt4YzN0MElQRDc5NzNtbFNFM2REdEdUT0QzMGxaN1ljN1dBIIEC; bili_jct=cdcf89d42fce5c364e26d324bc49edf7; LIVE_BUVID=AUTO4617194323455968; PVID=2; CURRENT_QUALITY=0; bili_ticket=eyJhbGciOiJIUzI1NiIsImtpZCI6InMwMyIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTk4NzA2OTYsImlhdCI6MTcxOTYxMTQzNiwicGx0IjotMX0.0wQkS3zYgNe_1hHuD7pUWJTOBKt4hJVhAtVNMxSFsiM; bili_ticket_expires=1719870636; home_feed_column=5; fingerprint=e5891333f9ec39c7d8c141672ff5b516; buvid_fp=9e6e957ef938b008b39a95d392784574; b_lsid=845A1310F_1906337DA4D; browser_resolution=1920-953; sid=4t4a4x26; bp_t_offset_37424969=948387774627577856"
 }
 
 # 准备工作
@@ -55,6 +57,7 @@ def fetch_comments(api_url, headers, cookies, retries=3):
                 data = response.json()
                 with open('vector.json', 'w') as file:
                     json.dump(data, file)
+                    return data
             elif response.status_code == 429:  # Too Many Requests
                 wait_time = int(response.headers.get("Retry-After", 2 ** i))
                 print(f"Rate limited. Waiting for {wait_time} seconds.")

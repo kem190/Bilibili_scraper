@@ -5,13 +5,13 @@ import random
 import csv
 from bs4 import BeautifulSoup
 
+# 信息填写
+#cookies =
+base_url_first_page = "https://search.bilibili.com/all?vt=10787890&keyword=%E5%A7%9C%E8%90%8D&search_source=1&page=1"
+base_url_with_offset = "https://search.bilibili.com/all?vt=10787890&keyword=%E5%A7%9C%E8%90%8D&search_source=1&page={page}&o={offset}"
 
-# Cookies (这是我自己的账号需要替换)
-cookies = {
-    "Cookies": "buvid3=E579EDE8-64A3-72D3-AD0D-9A111BE54DD103395infoc; b_nut=1713522703; CURRENT_FNVAL=4048; _uuid=A410CC8A5-FF13-FF86-D6FA-3542F4CC4910F05666infoc; buvid4=346F68FE-9DBC-DD3B-F9B3-C82EF884743305819-024041910-AYCtu957i4E2ZljBHTFxVg%3D%3D; rpdid=|(uJ~l)lmJ~R0J'u~uJlkk~ul; enable_web_push=DISABLE; FEED_LIVE_VERSION=V_HEADER_LIVE_NEW_POP; header_theme_version=CLOSE; buvid_fp_plain=undefined; DedeUserID=37424969; DedeUserID__ckMd5=02c3aef233c2afc9; PVID=1; fingerprint=7bc8ecec0e75401f907a3d6629ab4e69; buvid_fp=7bc8ecec0e75401f907a3d6629ab4e69; bili_ticket=eyJhbGciOiJIUzI1NiIsImtpZCI6InMwMyIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTkyNjg2MTMsImlhdCI6MTcxOTAwOTM1MywicGx0IjotMX0.-LdByVQmu-_jQFzpGDFqMQcqNBAarAowkZWJgTFfta0; bili_ticket_expires=1719268553; SESSDATA=a78c20de%2C1734696255%2Cb4d7d%2A62CjAlG5VbsUom3wUMggQRRW4gH-Dla6slK6SjWQ0o0NWZYcL4vZeHnmode7f2aL38tDYSVnVBRXoyWVM3S0xQWFVJbUc5TzMxMWlBaFdNRkEtY0JSSHgzeFhJTlhPaDhwX0htdHJjU3NDMnRnTGVIc1d0eWxwUE5rVWtTZEpnMHJUZ1dRanI5NnhBIIEC; bili_jct=c4704f6d7e6253cd5671c1d19e2d9cc0; sid=84sbggfc; home_feed_column=5; browser_resolution=1707-940; CURRENT_QUALITY=80; bp_t_offset_37424969=946595446120251392; b_lsid=B6BAF423_1904AA658CD; bsource=search_google"
-}
-
-# URL生成
+date_of_execution = "2024_06_26"
+IP_of_scraper = "UK"
 
 def generate_urls(base_url_first_page, base_url_with_offset, pages, step):
     urls = [base_url_first_page]  # Start with the first page without `o` parameter
@@ -22,8 +22,6 @@ def generate_urls(base_url_first_page, base_url_with_offset, pages, step):
     return urls
 
 # Base URLs with and without the `o` parameter
-base_url_first_page = "https://search.bilibili.com/all?vt=10787890&keyword=%E5%A7%9C%E8%90%8D&search_source=1&page=1"
-base_url_with_offset = "https://search.bilibili.com/all?vt=10787890&keyword=%E5%A7%9C%E8%90%8D&search_source=1&page={page}&o={offset}"
 
 # Number of pages to scrape
 total_pages = 28
@@ -32,32 +30,23 @@ total_pages = 28
 offset_step = 36
 
 # Generate the URLs
-# urls = generate_urls(base_url_first_page, base_url_with_offset, total_pages, offset_step)
-urls = "https://search.bilibili.com/all?vt=10787890&keyword=%E5%A7%9C%E8%90%8D&search_source=1&order=click&page=2&o=36"
-
-# 准备工作
-# Headers
+urls = generate_urls(base_url_first_page, base_url_with_offset, total_pages, offset_step)
 headers = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-    "Accept-Language": "en-US,en;q=0.9",
-    "Accept-Encoding": "gzip, deflate, br",
-    "Accept": "application/json, text/plain, */*",
-    "Connection": "keep-alive"
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
 }
+# Locate the elements containing the desired text
 
-# Open a CSV file to write the data
-with open('bilibili_videos.csv', mode='w', newline='', encoding='utf-8') as file:
+
+# Extract and print the desired information
+with open(f'jiangping_metadata_{date_of_execution}.csv', mode='w', newline='', encoding='utf-8') as file:
     writer = csv.writer(file)
-    writer.writerow(['Title', 'URL', 'Author', 'Date', 'Playbacks', 'Flash_comments', 'Duration'])
+    writer.writerow(['Title', 'URL', 'Author', 'Date', 'Playbacks', 'Flash_comments', 'Duration', 'date_of_scraping'])
 
     for url in urls:
-        # Introduce random sleep interval between requests
+        # Get the response from the URL
+        response = requests.get(url, headers=headers)
         time.sleep(random.uniform(1, 5))
-        print(url)
-        response = requests.get(url)
         soup = BeautifulSoup(response.content, 'html.parser')
-
-        # Locate the elements containing the desired text
         video_cards = soup.find_all('div', class_='bili-video-card')
 
         for card in video_cards:
@@ -84,8 +73,7 @@ with open('bilibili_videos.csv', mode='w', newline='', encoding='utf-8') as file
             playbacks = stats_tags[0].text.strip() if len(stats_tags) > 0 else ''
             flash_comments = stats_tags[1].text.strip() if len(stats_tags) > 1 else ''
 
-            # Extract duration
-            duration_tag = card.find('span', class_='bili-video-card__stats--duration')
+            duration_tag = card.find('span', class_='bili-video-card__stats__duration')
             video_duration = duration_tag.text.strip() if duration_tag else ''
 
             # Print the extracted information (optional)
@@ -99,4 +87,5 @@ with open('bilibili_videos.csv', mode='w', newline='', encoding='utf-8') as file
             print('----------')
 
             # Write the data to CSV
-            writer.writerow([video_title, video_url, video_author, video_date, playbacks, flash_comments, video_duration])
+
+            writer.writerow([video_title, video_url, video_author, video_date, playbacks, flash_comments, video_duration, date_of_scraping])

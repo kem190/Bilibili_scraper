@@ -132,7 +132,7 @@ def GetContent(NextPage, oid):
 
 if __name__ == '__main__':
     # 创建文件对象
-    with open('output.csv', mode='w', newline='', encoding='utf-8') as file:
+    with open('comment_data_3.csv', mode='w', newline='', encoding='utf-8') as file:
         # Create a csv writer object
         csv_writer = csv.writer(file)
         csv_writer.writerow(['title', 'oid', 'author', 'play', 'username', 'sex', 'location', 'text', 'likes', 'time'])

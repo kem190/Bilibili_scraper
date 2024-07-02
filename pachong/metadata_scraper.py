@@ -21,6 +21,14 @@ def generate_urls(base_url_first_page, base_url_with_offset, pages, step):
         urls.append(url)
     return urls
 
+def extract_oid(soup):
+    script_tag = soup.find('script', string=re.compile(r'window\.__INITIAL_STATE__')).text.strip()
+    if script_tag:
+        aid_match = re.search(r'"aid":(\d+)', script_tag)
+        if aid_match:
+            return aid_match.group(1)
+    return 'None'
+
 # Base URLs with and without the `o` parameter
 
 # Number of pages to scrape
@@ -48,6 +56,8 @@ with open(f'jiangping_metadata_{date_of_execution}.csv', mode='w', newline='', e
         time.sleep(random.uniform(1, 5))
         soup = BeautifulSoup(response.content, 'html.parser')
         video_cards = soup.find_all('div', class_='bili-video-card')
+        oid = extract_oid(soup)
+
 
         for card in video_cards:
             # Extract the video URL
@@ -55,6 +65,7 @@ with open(f'jiangping_metadata_{date_of_execution}.csv', mode='w', newline='', e
             video_url = link_tag['href'] if link_tag and 'href' in link_tag.attrs else ''
             if video_url.startswith('//'):
                 video_url = 'https:' + video_url
+
 
             # Extract the video title
             title_tag = card.find('h3', class_='bili-video-card__info--tit')

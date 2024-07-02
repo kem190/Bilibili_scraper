@@ -19,7 +19,7 @@ import traceback
 # print(unique_df.shape)
 metadata = pd.read_csv('all_data.csv')
 metadata = metadata.drop_duplicates(subset=['url'])
-date_execution = '2024/07/01'
+date_execution = '2024/07/02'
 
 # Set pandas display options to show all columns
 pd.set_option('display.max_columns', None)  # Show all columns
@@ -84,13 +84,14 @@ def make_request(url, headers, backoff_factor, retries=3):
             time.sleep(backoff_factor * (2 ** attempt))
     return None
 
-def extract_aid(soup):
-    script_tag = soup.find('script', string=re.compile(r'window\.__INITIAL_STATE__')).text.strip()
+def extract_oid(soup):
+    script_tag = soup.find('script', string=re.compile(r'window\.__INITIAL_STATE__'))
     if script_tag:
-        aid_match = re.search(r'"aid":(\d+)', script_tag)
+        script_text = script_tag.text.strip()
+        aid_match = re.search(r'"aid":(\d+)', script_text)
         if aid_match:
-            return aid_match.group(1)
-    return 'None'
+            return int(aid_match.group(1))  # Convert the matched string to an integer
+    return None
 
 all_video_data = []
 error_indices = []
@@ -119,13 +120,13 @@ for index, row in metadata.iterrows():
             continue
 
         response = make_request(meta_url, headers=headers, backoff_factor=backoff_time)
-        sleep = random.uniform(0.5, 2.5)
+        sleep = random.uniform(0.5, 1.5)
         time.sleep(sleep)
         print(f'sleeping for {sleep}')
         soup = BeautifulSoup(response.content, 'html.parser')
 
         # extract oid
-        oid = extract_aid(soup)
+        oid = extract_oid(soup)
 
         # extract full title
         meta_full_title = soup.find('h1', class_='video-title special-text-indent')

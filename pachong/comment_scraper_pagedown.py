@@ -5,6 +5,7 @@
 """
 # 导入数据请求模块 (需要安装 pip install requests)
 import requests
+import numpy as np
 # 导入csv模块 (内置模块, 不需要安装)
 import csv
 # 导入哈希模块
@@ -87,10 +88,6 @@ def GetContent(NextPage, oid):
     # 发送请求
     response = requests.get(url=url, params=data, headers=headers)
 
-    sleep = random.uniform(0.5, 2.5)
-    time.sleep(float(sleep))
-    print(f'sleeping for {sleep}')
-
     if response.status_code == 200:
         """获取数据"""
         # 获取响应json数据
@@ -137,8 +134,12 @@ if __name__ == '__main__':
         csv_writer = csv.writer(file)
         csv_writer.writerow(['title', 'oid', 'author', 'play', 'username', 'sex', 'location', 'text', 'likes', 'time'])
 
+        total_sleep_time = 0
+        dtype_spec = {3: str, 4: str}
+        metadata = pd.read_csv('related_video_data_3_new.csv', low_memory=False, dtype=dtype_spec)
+        metadata.iloc[:, 7] = metadata.iloc[:, 7].astype(int)
 
-        metadata = pd.read_csv('related_video_data_2_new.csv')
+        pd.set_option('display.float_format', '{:.0f}'.format)
         pd.set_option('display.max_columns', None)  # Show all columns
         pd.set_option('display.max_colwidth', None)  # Show full column width
         pd.set_option('display.expand_frame_repr', False)  # Prevent truncation
@@ -152,6 +153,7 @@ if __name__ == '__main__':
             oid = row['oid']
             author = row['meta_author']
             play = row['meta_playbacks']
+
             NextPage = '""'
             while NextPage:
                 NextPage, dits = GetContent(NextPage=NextPage, oid=oid)
@@ -161,5 +163,10 @@ if __name__ == '__main__':
                             [title, oid, author, play, dit['username'], dit['sex'], dit['location'], dit['text'],
                              dit['likes'],
                              dit['time']])
+                        sleep = random.uniform(0.9, 1.9)
+                        time.sleep(sleep)
+                        print(f'sleeping for {sleep}')
+                        total_sleep_time = total_sleep_time + sleep
+                        print(f'slept for {total_sleep_time}')
                 if NextPage is None:
                     break

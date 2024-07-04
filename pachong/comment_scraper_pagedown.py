@@ -19,7 +19,7 @@ import pandas as pd
 from urllib.parse import quote
 import random
 
-
+date_execution = '0705'
 def GetData(date_time, page, oid):
     pagination_str = '{"offset":%s}' % page
     print(quote(pagination_str))
@@ -129,7 +129,7 @@ def GetContent(NextPage, oid):
 
 if __name__ == '__main__':
     # 创建文件对象
-    with open('comment_data_3.csv', mode='w', newline='', encoding='utf-8') as file:
+    with open(f'comment_data_3_{date_execution}.csv', mode='w', newline='', encoding='utf-8') as file:
         # Create a csv writer object
         csv_writer = csv.writer(file)
         csv_writer.writerow(['title', 'oid', 'author', 'play', 'username', 'sex', 'location', 'text', 'likes', 'time'])

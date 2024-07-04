@@ -19,7 +19,7 @@ import traceback
 # print(unique_df.shape)
 metadata = pd.read_csv('all_data.csv')
 metadata = metadata.drop_duplicates(subset=['url'])
-date_execution = '2024/07/02'
+date_execution = '0704'
 
 # Set pandas display options to show all columns
 pd.set_option('display.max_columns', None)  # Show all columns
@@ -170,7 +170,7 @@ for index, row in metadata.iterrows():
 df = pd.DataFrame(all_video_data)
 
 # Write the DataFrame to a CSV file
-df.to_csv('related_video_data_3_new.csv', index=False)
+df.to_csv(f'related_video_data_3_{date_execution}.csv', index=False)
 
 if error_indices:
     error_df = pd.DataFrame(error_indices, columns=['error_index'])

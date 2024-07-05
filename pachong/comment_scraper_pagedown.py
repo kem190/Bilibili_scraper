@@ -22,7 +22,7 @@ import random
 date_execution = '0705'
 def GetData(date_time, page, oid):
     pagination_str = '{"offset":%s}' % page
-    print(quote(pagination_str))
+    #print(quote(pagination_str))
     # 传入参数列表
     ee = [
         "mode=3",
@@ -56,7 +56,7 @@ def GetContent(NextPage, oid):
     'accept': 'application/json, text/plain, */*',
     'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6',
     # 需定期更换cookie，否则location爬不到
-    'cookie': "buvid3=E579EDE8-64A3-72D3-AD0D-9A111BE54DD103395infoc; b_nut=1713522703; CURRENT_FNVAL=4048; _uuid=A410CC8A5-FF13-FF86-D6FA-3542F4CC4910F05666infoc; buvid4=346F68FE-9DBC-DD3B-F9B3-C82EF884743305819-024041910-AYCtu957i4E2ZljBHTFxVg%3D%3D; rpdid=|(uJ~l)lmJ~R0J'u~uJlkk~ul; enable_web_push=DISABLE; FEED_LIVE_VERSION=V_HEADER_LIVE_NEW_POP; header_theme_version=CLOSE; buvid_fp_plain=undefined; DedeUserID=37424969; DedeUserID__ckMd5=02c3aef233c2afc9; LIVE_BUVID=AUTO4617194323455968; PVID=2; CURRENT_QUALITY=0; fingerprint=e5891333f9ec39c7d8c141672ff5b516; buvid_fp=9e6e957ef938b008b39a95d392784574; SESSDATA=a86d99bd%2C1735292761%2C450cf%2A62CjA9spxcrBgYReT3WDdZXVsoGnh1JoWNChsYvYrUaYxdQog9kXhsfmoq8uG9d9Imv2MSVnVVXzJhZ0lNWWJZN0hzQURqbHF0WDdVb00zODR4cjhyUWtZY1Y5cEdtS0ljX0xNbVZCQWI1NDRFOG4zUk1vTGxLeWNwVl9oa3ZvNVhoa2tieU5fb0tnIIEC; bili_jct=9de77aa940a9d7e8afe3c59d1ed81730; home_feed_column=5; browser_resolution=1920-953; sid=5oz1naa3; bp_t_offset_37424969=948823447520149504; bili_ticket=eyJhbGciOiJIUzI1NiIsImtpZCI6InMwMyIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MjAxMzA3NTgsImlhdCI6MTcxOTg3MTQ5OCwicGx0IjotMX0.-CaEj8bdj4XV8UFFu5IjKQbgARXBSJZHPQPI7NJvOZc; bili_ticket_expires=1720130698; b_lsid=8711068D7_19070872042",
+    'cookie': "buvid3=E579EDE8-64A3-72D3-AD0D-9A111BE54DD103395infoc; b_nut=1713522703; CURRENT_FNVAL=4048; _uuid=A410CC8A5-FF13-FF86-D6FA-3542F4CC4910F05666infoc; buvid4=346F68FE-9DBC-DD3B-F9B3-C82EF884743305819-024041910-AYCtu957i4E2ZljBHTFxVg%3D%3D; rpdid=|(uJ~l)lmJ~R0J'u~uJlkk~ul; enable_web_push=DISABLE; FEED_LIVE_VERSION=V_HEADER_LIVE_NEW_POP; header_theme_version=CLOSE; buvid_fp_plain=undefined; DedeUserID=37424969; DedeUserID__ckMd5=02c3aef233c2afc9; LIVE_BUVID=AUTO4617194323455968; PVID=2; CURRENT_QUALITY=0; fingerprint=e5891333f9ec39c7d8c141672ff5b516; buvid_fp=9e6e957ef938b008b39a95d392784574; home_feed_column=5; bp_t_offset_37424969=948823447520149504; SESSDATA=39c0a02f%2C1735663622%2C2a294%2A72CjBQ04wvuK3GCoxYXHsTHmxowjuhWpZ6kjABSL4SlUSpPcFV6eJFK0BEaOFDorX_OUgSVnVaWnkyVV91TmZCOC1PVXotQkQzclk4cVAwcHQ5WWdwTm9XYVhMU252dFplTm1GZ0hYMGZQMEJyM3ZiakVWT1JEY2pBU05KZzVPdm9fdWNKcTYxNWN3IIEC; bili_jct=962e6eb1bf48280cb23859fb9a8778b2; sid=6hc86u5l; b_lsid=4E4FD325_190800BC43D; browser_resolution=1707-940; bili_ticket=eyJhbGciOiJIUzI1NiIsImtpZCI6InMwMyIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MjAzOTQ0MTcsImlhdCI6MTcyMDEzNTE1NywicGx0IjotMX0.UwiDHqUqMVDSGHn6rMThzXRA0ZULN2YhbZAEO7G3LP4; bili_ticket_expires=1720394357",
     'origin': 'https://www.bilibili.com',
     'referer': 'https://www.bilibili.com/video/BV1FG4y1Z7po/?spm_id_from=333.337.search-card.all.click&vd_source=69a50ad969074af9e79ad13b34b1a548',
     'sec-ch-ua': '"Chromium";v="106", "Microsoft Edge";v="106", "Not;A=Brand";v="99"',
@@ -133,10 +133,11 @@ if __name__ == '__main__':
         # Create a csv writer object
         csv_writer = csv.writer(file)
         csv_writer.writerow(['title', 'oid', 'author', 'play', 'username', 'sex', 'location', 'text', 'likes', 'time'])
-
+        index_number = 0
         total_sleep_time = 0
+        total_pages = 0
         dtype_spec = {3: str, 4: str}
-        metadata = pd.read_csv('related_video_data_3_new.csv', low_memory=False, dtype=dtype_spec)
+        metadata = pd.read_csv('related_video_data_3_2024_07_04.csv', low_memory=False, dtype=dtype_spec)
         metadata.iloc[:, 7] = metadata.iloc[:, 7].astype(int)
 
         pd.set_option('display.float_format', '{:.0f}'.format)
@@ -148,25 +149,46 @@ if __name__ == '__main__':
         metadata = metadata.drop_duplicates(subset=['oid'])
         print(metadata.head())
 
+        total_script_start_time = time.time()
         for index, row in metadata.iterrows():
             title = row['meta_full_title']
             oid = row['oid']
             author = row['meta_author']
             play = row['meta_playbacks']
 
+            sleep = random.uniform(0.9, 1.9)
+            time.sleep(sleep)
+            print(f'sleeping for {sleep}')
+            total_sleep_time = total_sleep_time + sleep
+
+            index_number = index_number + 1
+            print(f'slept for {total_sleep_time}')
+            print(f'index = {index_number}')
+            print(f'pages = {total_pages}')
             NextPage = '""'
+            pages = 0
             while NextPage:
                 NextPage, dits = GetContent(NextPage=NextPage, oid=oid)
+
+                pages = pages + 1
+
+                if pages % 10 == 0:
+                    sleep = random.uniform(0.9, 1.9)
+                    time.sleep(sleep)
+                    print(f'waiting {sleep}s for next page')
+                    total_sleep_time = total_sleep_time + sleep
+                    print(f'slept for {total_sleep_time}')
+
                 if dits:
                     for dit in dits:
                         csv_writer.writerow(
                             [title, oid, author, play, dit['username'], dit['sex'], dit['location'], dit['text'],
                              dit['likes'],
                              dit['time']])
-                        sleep = random.uniform(0.9, 1.9)
-                        time.sleep(sleep)
-                        print(f'sleeping for {sleep}')
-                        total_sleep_time = total_sleep_time + sleep
-                        print(f'slept for {total_sleep_time}')
                 if NextPage is None:
+                    total_pages = total_pages + pages
                     break
+            total_script_end_time = time.time()  # End timing the entire script
+            total_script_duration = total_script_end_time - total_script_start_time
+            print(f'Total script execution time: {total_script_duration} seconds')
+            print(f'Total sleep time: {total_sleep_time} seconds')

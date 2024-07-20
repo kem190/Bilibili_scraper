@@ -32,6 +32,21 @@
 以我目前对方法的理解，SNA不可避免地会引入b站推送算法的“倾向”。如果SNA做出两个组，然后我们能解读成挺姜和反姜，那也只是说明了算法的确有极化倾向（这也有文献支撑）。它能做的也只是帮我们把数据标注的工作自动化了，相当于做了unsupervised的分类。如果检测SNA处理后的组发现并非如此，这也只相当于p>0.05，没什么有意义的推测。我们可以用别的方法对数据进行探索式分析。因此，今天我打算对两个组分别进行主题建模，或者用wordfish的方式来看看它们是否的确不同。不过，在前两组内的，带有评论数据的视频似乎只有百分之四十（数据待check），这部分可能需要相当细碎的代码处理和一些manual labour。希望今天能做完。<br />
 另外，对于新出炉（0704）的数据，也可以做一些描述性统计，比如看看评论分布之类的。事实上，应该用新出炉的数据的评论和之前的SNA结果匹配吧，来尝试一下。<br />
 
+### **20240720**
+从SNA给出的community出发，重做了topic modelling和Wordfish分析。这相当于有些自证，其中的逻辑是：“用b站推送情况自然形成的unsupervised的分组，就好像它是自然形成的一样”。<br />
+1. Wordfish <br />
+在论证游说的文章（）中，不同的企业分别为自己的组，在本研究中，不同的社区是自己的组。于是Wordfish就在试图说明这些社区的确有不同的潜在倾向，而如何解读这种倾向，也就是把beta的大小解读为什么，就要靠作者了。<br />
+我试图从图5的词频分布上读出这种倾向<br />
+![图5 Wordfish给出的每个词的权重](https://github.com/kem190/Bilibili_scraper/blob/main/beta_distribution_of_words_19.jpeg)
+这样一来，图6的不同组别分布也就具有了意义，有趣的是……<br />
+![图6 Wordfish赋分后分组的分布情况](https://github.com/kem190/Bilibili_scraper/blob/main/wordfish_results_of_19_communities.jpeg)
+
+2. Topic modeling<br />
+我将community作为文档的组别，重新做了主题建模。这次出来的结果也算有点好看。首先是用程序跑的主题数量，给出了预期的曲线（抱歉我没看懂CaoJuan2009的方法），我只知道k=8是好的（图7），暂时可用。于是用k=8跑了一下，出来的结果如图8。<br />
+![图7 计算最佳的主题数的结果](https://github.com/kem190/Bilibili_scraper/blob/main/find_topic_number_result.jpeg)
+![图8 8个主题的主题建模结果](https://github.com/kem190/Bilibili_scraper/blob/main/topics_k_8.jpeg)
+
+
 ## 其他想法：
 如果我把多次相关视频的seed-result联系起来，相当于人为施加权重。感觉不合理。但如果不这么相关，又能意味着什么呢？把程序当主体？<br />
 

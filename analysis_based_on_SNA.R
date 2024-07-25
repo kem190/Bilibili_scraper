@@ -14,10 +14,16 @@ library(tidytext)
 library(reshape2)
 library(ggplot2)
 library(ggthemes)
-df <- read.csv('df_tokenized.csv')
+library(readr)
+
+df <- read_csv('C:\\Users\\57016\\PycharmProjects\\All_about_social_mentality_online\\pachong\\comment_data_3_0705.csv')
+jp_rel_comments <- read_csv("jp_rel_comments.csv")
+  
 metadata <- read.csv('pachong\\related_video_data_2_new.csv')
 data_3 <- read.csv('pachong\\related_video_data_3_new.csv')
-df_sna <- read.csv('weighted_edgelist.csv')
+df_sna <- read.csv('rel_weighted_edgelist.csv')
+
+df <- jp_rel_comments
 df <- as.data.table(df)
 df_sna <- as.data.table(df_sna)
 df_sna <- df_sna %>%
@@ -30,14 +36,18 @@ head(df_sna)
 merged_df = merge(df, df_sna, by='name')
 
 df <- merged_df
-#df <- df %>% 
-#  filter(Community <= 4) # 这里从909变成446，filter掉一半
+
+
+
+df <- df %>% 
+  filter(Community <= 7) # 这里从909变成446，filter掉一半 #新数据从2079607变成1198503
 
 
 jieba = worker()
+
 jieba$bylines = TRUE
 df <- df %>%
-  mutate(tokens = segment(text_bag, jieba))
+  mutate(tokens = segment(text, jieba))
 
 
 custom_stopwords <- readLines("cn_stopwords.txt")
@@ -58,6 +68,8 @@ class(df$clean_text_bag)
 ################### topic modelling ############################
 group_rep <- rep(df$Community, sapply(df$clean_text_bag, length))
 
+
+group_rep <- rep(df$oid, sapply(df$clean_text_bag, length))
 # Create the data frame
 df_token_group <- data.frame(
   token = unlist(df$clean_text_bag),
@@ -79,7 +91,7 @@ tm::inspect(dtm_jieba)
 library(ldatuning)
 result <- FindTopicsNumber(
   dtm_jieba,
-  topics = seq(from = 2, to = 50, by = 1),
+  topics = seq(from = 2, to = 19, by = 1),
   metrics = "CaoJuan2009",
   method = "Gibbs",
   control = list(seed = 19L),
@@ -89,7 +101,7 @@ result <- FindTopicsNumber(
 
 FindTopicsNumber_plot(result)
 
-lda_final <- LDA(dtm_jieba, k = 8, method = "Gibbs", control = list(seed = 19L))
+lda_final <- LDA(dtm_jieba, k = 12, method = "Gibbs", control = list(seed = 19L))
 topics_20 <- tidy(lda_final, matrix = "beta")
 top_terms <- topics_20 %>%
   group_by(topic) %>%
@@ -138,25 +150,38 @@ barplot(prevalence, main = "Prevalence of the topics", xlab = "topic number", yl
 
 ################### wordfish #########################
 head(df)
-df <- df %>% 
-  filter(Community <= 19) # 这里从909变成683，filter掉25%，故意的
-df$clean_text_bag <- sapply(df$clean_text_bag, paste, collapse = " ")
-df_aggregated <- df %>%
+df_new <- df
+df_new <- df %>% 
+  filter(Community <= 4) # 这里从909变成683，filter掉25%，故意的
+df_new <- df_new %>%
+  filter(Community != 5)
+df_new$clean_text_bag <- sapply(df_new$clean_text_bag, paste, collapse = " ")
+df_aggregated <- df_new %>%
   group_by(Community) %>%
   summarise(clean_text_bag = paste(clean_text_bag, collapse = " "))
+
+
+save(df_aggregated, file = 'df_aggregated.rda')
+
+df_new <- df_new %>%
+  group_by(name)
+  mutate(vid_index = row_number())
+
 corpus_data <- corpus(df_aggregated, text_field = "clean_text_bag", docid_field = "Community")
 
-corpus <- corpus(df, text_field = "clean_text_bag", docid_field = "doc_index")
+corpus <- corpus(df_new, text_field = "clean_text_bag", docid_field = "oid")
 
 docvars(corpus, "Community") <- df$Community
 
-docvars(corpus) <- df[, c("Community")]
+#docvars(corpus) <- df[, c("Community")]
 
 tokens <- tokens(corpus_data, remove_punct = TRUE)
 
+
 dfm <- dfm(tokens)
-dfm <- dfm_trim(dfm, min_docfreq = 5, docfreq_type = "count")
+dfm <- dfm_trim(dfm, min_docfreq = 2, docfreq_type = "count")
 dim(dfm)
+save(dfm, file = 'dfm.rdata')
 # Run the Wordfish algorithm
 wordfish_result <- textmodel_wordfish(dfm)
 

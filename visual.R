@@ -17,8 +17,105 @@ library(ggthemes)
 library(readr)
 
 df_raw <- read_csv('C:\\Users\\57016\\PycharmProjects\\All_about_social_mentality_online\\pachong\\comment_data_3_0705.csv')
-
+df <- df_raw
 df <- read_csv('C:\\Users\\57016\\PycharmProjects\\All_about_social_mentality_online\\pachong\\comment_data_3_0705.csv')
+df <- df %>%
+  mutate(index = row_number())
+
+############## 寻找跟姜萍直接相关的视频和评论 #########
+
+df_jp <- df %>%
+  filter(grepl("姜萍", text))
+title_jp <- df %>%
+  filter(grepl("姜萍", title))
+titles <- c(df_jp$title, title_jp$title)
+
+jp_rel_comments <- df %>%
+  filter(title %in% titles)
+
+write.csv(jp_rel_comments, file = "jp_rel_comments.csv")
+
+############### cleaning and tokenising ############
+
+# 删除系统生成的评论
+jp_rel_comments <- read.csv("jp_rel_comments.csv")
+
+# 删除只有表情的评论
+clean_rel <- title_jp %>%
+  mutate(text = gsub("\\[.*?\\]", "", text)) %>%
+  mutate(text = str_replace_all(text, "@.*", "")) %>%
+  mutate(text = str_replace_all(text, "https?://\\S+\\s*", "")) %>%
+  mutate(text = trimws(text)) %>%  # Trim leading/trailing white spaces
+  filter(text != "") %>%  # Remove empty strings
+  filter(str_count(text, "[\u4e00-\u9fff]") > 2)
+  drop_na(text)  # Drop NA values
+
+peek <- clean_rel %>%
+  group_by(title) %>%
+  mutate(tit_count = n()) %>%
+  arrange(!desc(tit_count)) %>%
+  ungroup()
+
+peek <- as.data.frame(table(clean_rel$title))
+### peek ###
+df_repetitive <- clean_rel %>%
+  group_by(text) %>%
+  filter(n() > 1) %>%
+  select(text)
+  ungroup()
+
+########## tokenising  #############
+jieba = worker()
+  
+jieba$bylines = TRUE
+df <- clean_rel
+df <- df %>%
+  mutate(tokens = segment(text, jieba))
+  
+  
+custom_stopwords <- readLines("cn_stopwords.txt")
+remove_custom_stopwords <- function(tokens, stopwords) {
+  tokens <- tokens[!tokens %in% stopwords]
+  return(tokens)
+}
+  
+  
+  #df$clean_text_bag <- sapply(df$tokens, remove_custom_stopwords, stopwords = custom_stopwords)
+  # Assuming df$tokens is a list of tokenized words for each document
+df$clean_text_bag <- lapply(df$tokens, remove_custom_stopwords, stopwords = custom_stopwords)
+df$clean_text_bag <- sapply(df$clean_text_bag, paste, collapse = " ")
+  
+df <- df %>%
+  select(!tokens)
+class(df$clean_text_bag)
+  
+write.csv(df, file = 'tokenised_rel_comments.csv')
+write.csv(jp_rel_comments, file = "jp_rel_comments.csv")
+
+########### 区分地区 ########
+library(mapchina)
+china_provinces <- china %>%
+  as.data.frame() %>%
+  mutate(location = substr(Name_Province, 1,2)) %>%
+  select(Code_Province, location) %>%
+  distinct(location, .keep_all = TRUE)
+
+loc_rel <- df %>%
+  mutate(location = substr(location, 1,2)) %>%
+  left_join(china_provinces, by = 'location')%>%
+  mutate(
+    loc_1 = case_when(
+      location %in% c("未知", "unknown") ~ location,
+      is.na(Code_Province) ~ "海外",
+      TRUE ~ as.character(location)
+    )
+  )
+
+
+########### SNA
+title_jp <- df %>%
+  filter(grepl("姜萍", title))
+
 df_sna <- read.csv('weighted_edgelist.csv')
 df <- as.data.table(df)
 df_sna <- as.data.table(df_sna)
@@ -37,7 +134,7 @@ no_text_df <- merged_df %>%
 
 #save(no_text_df, file = 'no_text_df.R')
 
-loc <- as.data.table(table(no_text_df$location))
+loc <- as.data.table(table(jp_rel_comments$location))
 
 ###################### map visual #####
 library(ggplot2)
@@ -45,9 +142,14 @@ library(sf)
 library(dplyr)
 library(viridis) # For color scales
 library(mapchina)
+library(tidyverse)
 head(china)
 View(china)
 
+china_loc <- china$Name_Province
+china_loc <- as.data.frame(china_loc)
+china_loc <- china_loc %>%
+  mutate(location = substr(china_loc, 1,2))
 cured_china <- st_make_valid(china)
 
 china_provinces_sf <- cured_china %>%
@@ -123,7 +225,7 @@ ggplot(data = no_text_df, aes(x = comment_num_group)) +
   }) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
-table(no_text_df$sex)
+table(jp_rel_comments$sex)
 
 ####### processing for further grouped analysis ##############
 head(df)
@@ -146,8 +248,8 @@ titles_df <- selected_df %>%
 filtered_df <- titles_df %>%
   filter(!grepl(pattern, name))
 
-peek <- filtered_df %>%
-  filter(grepl("主", name))
+peek <- jp_rel_vids %>%
+  filter(grepl("主=", title))
 
 original_counts <- titles_df %>%
   group_by(community) %>%
@@ -167,11 +269,13 @@ comparison <- original_counts %>%
 
 class(titles_list)
 # 这里不得不人工看一眼community来判断这个数据的有效性了
+selected_df <- df %>%
+  distinct(name, .keep_all = TRUE)
 sampled_df <- selected_df %>%
-  group_by(community) %>%
+  group_by(Community) %>%
   do(sample_n(., min(20, n()))) %>%
   ungroup() %>%
-  select(name, community)
+  select(name, Community)
 
 print(sampled_df)
 trimmed_rel_data

@@ -42,10 +42,12 @@ df <- merged_df
 df <- df %>% 
   filter(Community <= 7) # 这里从909变成446，filter掉一半 #新数据从2079607变成1198503
 
+##### tokenising #########
 
 jieba = worker()
 
 jieba$bylines = TRUE
+df <- clean_rel
 df <- df %>%
   mutate(tokens = segment(text, jieba))
 
@@ -57,19 +59,22 @@ remove_custom_stopwords <- function(tokens, stopwords) {
 }
 
 
-df$clean_text_bag <- sapply(df$tokens, remove_custom_stopwords, stopwords = custom_stopwords)
+#df$clean_text_bag <- sapply(df$tokens, remove_custom_stopwords, stopwords = custom_stopwords)
 # Assuming df$tokens is a list of tokenized words for each document
 df$clean_text_bag <- lapply(df$tokens, remove_custom_stopwords, stopwords = custom_stopwords)
+df$clean_text_bag <- sapply(df$clean_text_bag, paste, collapse = " ")
 
+df <- df %>%
+  select(!tokens)
 class(df$clean_text_bag)
 
-
-
+write.csv(df, file = 'tokenised_rel_comments.csv')
+write.csv(jp_rel_comments, file = "jp_rel_comments.csv")
 ################### topic modelling ############################
 group_rep <- rep(df$Community, sapply(df$clean_text_bag, length))
 
 
-group_rep <- rep(df$oid, sapply(df$clean_text_bag, length))
+# group_rep <- rep(df$oid, sapply(df$clean_text_bag, length))
 # Create the data frame
 df_token_group <- data.frame(
   token = unlist(df$clean_text_bag),
@@ -150,28 +155,48 @@ barplot(prevalence, main = "Prevalence of the topics", xlab = "topic number", yl
 
 ################### wordfish #########################
 head(df)
+
 df_new <- df
 df_new <- df %>% 
   filter(Community <= 4) # 这里从909变成683，filter掉25%，故意的
 df_new <- df_new %>%
   filter(Community != 5)
 df_new$clean_text_bag <- sapply(df_new$clean_text_bag, paste, collapse = " ")
+
+
+## 区分海外和国内地区 ##
+library(mapchina)
+china_provinces <- china %>%
+  as.data.frame() %>%
+  mutate(location = substr(Name_Province, 1,2)) %>%
+  select(Code_Province, location) %>%
+  distinct(location, .keep_all = TRUE)
+
+loc_rel <- df %>%
+  mutate(location = substr(location, 1,2)) %>%
+  left_join(china_provinces, by = 'location')%>%
+  mutate(
+    loc_1 = case_when(
+      location %in% c("未知", "unknown") ~ location,
+      is.na(Code_Province) ~ "海外",
+      TRUE ~ as.character(location)
+    )
+  )
+
+
+df_new <- loc_rel
+
 df_aggregated <- df_new %>%
-  group_by(Community) %>%
+  group_by(loc_1) %>%
   summarise(clean_text_bag = paste(clean_text_bag, collapse = " "))
 
+write.csv(df_aggregated, file = 'clean_loc_comments.csv')
 
-save(df_aggregated, file = 'df_aggregated.rda')
+corpus_data <- corpus(df_aggregated, text_field = "clean_text_bag", docid_field = "loc_1")
 
-df_new <- df_new %>%
-  group_by(name)
-  mutate(vid_index = row_number())
+#corpus <- corpus(df_new, text_field = "clean_text_bag", docid_field = "oid")
 
-corpus_data <- corpus(df_aggregated, text_field = "clean_text_bag", docid_field = "Community")
-
-corpus <- corpus(df_new, text_field = "clean_text_bag", docid_field = "oid")
-
-docvars(corpus, "Community") <- df$Community
+#docvars(corpus, "Community") <- df$Community
 
 #docvars(corpus) <- df[, c("Community")]
 
@@ -179,9 +204,8 @@ tokens <- tokens(corpus_data, remove_punct = TRUE)
 
 
 dfm <- dfm(tokens)
-dfm <- dfm_trim(dfm, min_docfreq = 2, docfreq_type = "count")
+dfm <- dfm_trim(dfm, min_docfreq = 3, docfreq_type = "count")
 dim(dfm)
-save(dfm, file = 'dfm.rdata')
 # Run the Wordfish algorithm
 wordfish_result <- textmodel_wordfish(dfm)
 
@@ -203,7 +227,7 @@ feat_betas %>%
 
 top_features <- feat_betas %>%
   arrange(betas) %>%
-  slice_head(n = 50)
+  slice_head(n = 100)
 
 print(top_features)
 
